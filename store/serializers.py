@@ -30,5 +30,6 @@ class ProductSerializer(serializers.ModelSerializer):
     #     return instance
 
 class ReviewSerializer(serializers.ModelSerializer):
-    model = Review
-    fields = ['id', 'product', 'name', 'description', 'date']
+    class Meta:
+        model = Review
+        fields = ['id', 'product', 'name', 'description', 'date']
