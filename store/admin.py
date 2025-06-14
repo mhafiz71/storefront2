@@ -113,3 +113,15 @@ class OrderAdmin(admin.ModelAdmin):
     autocomplete_fields = ['customer']
     inlines = [OrderItemInline]
     list_display = ['id', 'placed_at', 'customer']
+
+class CartItemInline(admin.StackedInline):
+    autocomplete_fields = ['product']
+    model = models.CartItem
+    max_num = 10
+    min_num = 1
+    extra = 0
+
+@admin.register(models.Cart)
+class CartAdmin(admin.ModelAdmin):
+    list_display = ['id', 'created_at']
+    inlines = [CartItemInline]
