@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 
 from pathlib import Path
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -41,6 +42,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'debug_toolbar',
     'djoser',
+    'drf_spectacular',
     'playground',
     'store',
     'tags',
@@ -143,15 +145,82 @@ STATIC_URL = '/static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+DJOSER = {
+    'SERIALIZERS': {
+        'user_create': 'core.serializers.UserCreateSerializer',
+        'current_user': 'core.serializers.UserSerializer',
+    }
+}
+
 REST_FRAMEWORK = {
     'COERCE_DECIMAL_TO_STRING': False,
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simple_jwt.authentication.JWTAuthentication',
-    )
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Storefront API',
+    'DESCRIPTION': 'API for the storefront application',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    # Available themes: 'redoc', 'swagger-ui'
+    'SWAGGER_UI_SETTINGS': {
+        'deepLinking': True,
+        'persistAuthorization': True,
+        'displayOperationId': True,
+        'docExpansion': 'none',
+        'filter': True,
+        'showExtensions': True,
+        'showCommonExtensions': True,
+        # Add custom CSS to include download link
+        'customCss': '''
+            .swagger-ui .topbar { 
+                display: flex; 
+                justify-content: space-between; 
+                align-items: center; 
+            }
+            .download-link { 
+                background: #61affe; 
+                color: white; 
+                padding: 8px 16px; 
+                text-decoration: none; 
+                border-radius: 4px; 
+                margin-right: 10px;
+            }
+        ''',
+        'customJs': '/static/js/swagger-custom.js',  # Optional: add custom JS
+    },
+    'COMPONENT_SPLIT_REQUEST': True,
+    'SORT_OPERATIONS': False,
+    # Authentication configuration
+    'SECURITY_DEFINITIONS': {
+        'Bearer': {
+            'type': 'http',
+            'scheme': 'bearer',
+            'bearerFormat': 'JWT',
+        },
+        'Token': {
+            'type': 'apiKey',
+            'in': 'header',
+            'name': 'Authorization',
+            'description': 'Token-based authentication with required prefix "Token"'
+        }
+    },
+    'SERVE_PERMISSIONS': ['rest_framework.permissions.IsAuthenticated'],
+    'SERVE_AUTHENTICATION': ['rest_framework_simplejwt.authentication.JWTAuthentication'],
+    'DISABLE_ERRORS_AND_WARNINGS': False,
+    'ENUM_NAME_OVERRIDES': {},
+    'SCHEMA_PATH_PREFIX': '/',  # Include all paths
+    'SCHEMA_PATH_PREFIX_TRIM': False,
+    'PREPROCESSING_HOOKS': [],
+    'POSTPROCESSING_HOOKS': [],
 }
 
 SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('JWT',),
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=6),
 }
 
 AUTH_USER_MODEL = 'core.User'

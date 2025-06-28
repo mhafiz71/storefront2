@@ -11,6 +11,8 @@ djangorestframework = "*"
 drf-nested-routers = "*"
 django-filter = "*"
 djoser = "*"
+djangorestframework-simplejwt = "*"
+drf-spectacular = {extras = ["sidecar"], version = "*"}
 
 [dev-packages]
 

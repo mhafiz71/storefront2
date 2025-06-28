@@ -1,0 +1,8 @@
+node_modules
+storefront_client
+*.yaml
+*.yml
+pos_dashboard.py
+index.html
+# package-lock.json
+package.json

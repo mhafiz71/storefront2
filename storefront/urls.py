@@ -16,6 +16,19 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 import debug_toolbar
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
+from rest_framework.permissions import AllowAny
+
+# Create permission-free views for documentation
+class SpectacularAPIViewNoAuth(SpectacularAPIView):
+    permission_classes = [AllowAny]
+
+class SpectacularSwaggerViewNoAuth(SpectacularSwaggerView):
+    permission_classes = [AllowAny]
+
+class SpectacularRedocViewNoAuth(SpectacularRedocView):
+    permission_classes = [AllowAny] 
+
 
 admin.site.site_title = 'Storefront Admin Login'
 admin.site.site_header = 'Storefront Admin'
@@ -28,4 +41,8 @@ urlpatterns = [
     path('__debug__/', include(debug_toolbar.urls)),
     path('auth/', include('djoser.urls')),
     path('auth/', include('djoser.urls.jwt')),
+
+    path('store/schema/', SpectacularAPIViewNoAuth.as_view(), name='schema'),
+    path('store/docs/', SpectacularSwaggerViewNoAuth.as_view(url_name='schema'), name='swagger-ui'),
+    path('store/redoc/', SpectacularRedocViewNoAuth.as_view(url_name='schema'), name='redoc'),
 ]
