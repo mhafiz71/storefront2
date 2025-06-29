@@ -214,6 +214,7 @@ SPECTACULAR_SETTINGS = {
     'ENUM_NAME_OVERRIDES': {},
     'SCHEMA_PATH_PREFIX': '/',  # Include all paths
     'SCHEMA_PATH_PREFIX_TRIM': False,
+    'DEFAULT_GENERATOR_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'PREPROCESSING_HOOKS': [],
     'POSTPROCESSING_HOOKS': [],
 }
