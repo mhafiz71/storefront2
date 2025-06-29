@@ -7,10 +7,10 @@ from rest_framework.mixins import CreateModelMixin, RetrieveModelMixin, DestroyM
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.permissions import IsAuthenticated, IsAdminUser, DjangoModelPermissions, DjangoModelPermissionsOrAnonReadOnly
 from .models import Product, Collection, OrderItem, Review, Cart, CartItem, Order, Customer
 from .filters import ProductFilter
-from .permissions import IsAdminOrReadOnly
+from .permissions import IsAdminOrReadOnly, FullDjangoModelPermissions, CanViewCsutomerHistoryPermission
 from .pagination import DefaultPagination
 from .serializers import ProductSerializer, CollectionSerializer, ReviewSerializer, CartSerializer, CartItemSerializer, AddCartItemSerializer, UpdateCartItemSerializer, OrderItemSerializer, OrderSerializer, CustomerSerializer
 
@@ -84,10 +84,14 @@ class OrderItemSerializer(ModelViewSet):
     serializer_class = OrderItemSerializer
 
 
-class CustomerViewset(CreateModelMixin, RetrieveModelMixin, GenericViewSet):
+class CustomerViewset(ModelViewSet):
     queryset = Customer.objects.all()
     serializer_class = CustomerSerializer
-    permission_classes = [IsAdminUser]
+    permission_classes = [DjangoModelPermissionsOrAnonReadOnly]
+
+    @action(detail=True, permission_classes=[CanViewCsutomerHistoryPermission])
+    def history(self, request, pk):
+        return Response('Ok')
 
     @action(detail=False, methods=['GET', 'PUT'], permission_classes=[IsAuthenticated])
     def me(self, request):
