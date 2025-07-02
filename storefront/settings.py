@@ -164,7 +164,7 @@ REST_FRAMEWORK = {
 
 JWT_COOKIE_NAME = 'access_token'
 JWT_REFRESH_COOKIE_NAME = 'refresh_token'
-# JWT_COOKIE_SECURE = not IS_LOCAL  # Secure only in production
+JWT_COOKIE_SECURE = not IS_LOCAL  # Secure only in production
 JWT_COOKIE_HTTP_ONLY = True
 JWT_COOKIE_SAME_SITE = 'Strict'
 
@@ -236,6 +236,7 @@ SPECTACULAR_SETTINGS = {
 SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('JWT',),
     'ACCESS_TOKEN_LIFETIME': timedelta(days=6),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,    
 }
