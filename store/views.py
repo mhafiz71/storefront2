@@ -6,8 +6,12 @@ from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.mixins import CreateModelMixin, RetrieveModelMixin, DestroyModelMixin
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.conf import settings
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated, IsAdminUser, DjangoModelPermissions, DjangoModelPermissionsOrAnonReadOnly
+from rest_framework.permissions import IsAuthenticated, IsAdminUser, DjangoModelPermissions, DjangoModelPermissionsOrAnonReadOnly, AllowAny
 from .models import Product, Collection, OrderItem, Review, Cart, CartItem, Order, Customer
 from .filters import ProductFilter
 from .permissions import IsAdminOrReadOnly, FullDjangoModelPermissions, CanViewCsutomerHistoryPermission
@@ -106,3 +110,98 @@ class CustomerViewset(ModelViewSet):
             serializer.is_valid(raise_exception=True)
             serializer.save()
             return Response(serializer.data)
+        
+
+class CookieTokenObtainPairView(TokenObtainPairView):
+    """
+    Login view that sets JWT tokens in HTTP-only cookies
+    """
+    def post(self, request, *args, **kwargs):
+        response = super().post(request, *args, **kwargs)
+        
+        if response.status_code == 200:
+            access_token = response.data['access']
+            refresh_token = response.data['refresh']
+            
+            # Remove tokens from response body for security
+            response.data = {'message': 'Login successful'}
+            
+            # Set access token cookie
+            response.set_cookie(
+                settings.JWT_COOKIE_NAME,
+                access_token,
+                max_age=settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME'].total_seconds(),
+                httponly=settings.JWT_COOKIE_HTTP_ONLY,
+                secure=settings.JWT_COOKIE_SECURE,
+                samesite=settings.JWT_COOKIE_SAME_SITE,
+            )
+            
+            # Set refresh token cookie
+            response.set_cookie(
+                settings.JWT_REFRESH_COOKIE_NAME,
+                refresh_token,
+                max_age=settings.SIMPLE_JWT['REFRESH_TOKEN_LIFETIME'].total_seconds(),
+                httponly=settings.JWT_COOKIE_HTTP_ONLY,
+                secure=settings.JWT_COOKIE_SECURE,
+                samesite=settings.JWT_COOKIE_SAME_SITE,
+            )
+        
+        return response
+
+class CookieTokenRefreshView(TokenRefreshView):
+    """
+    Token refresh view that handles HTTP-only cookies
+    """
+    def post(self, request, *args, **kwargs):
+        # Get refresh token from cookie
+        refresh_token = request.COOKIES.get(settings.JWT_REFRESH_COOKIE_NAME)
+        
+        if not refresh_token:
+            return Response(
+                {'error': 'Refresh token not found'}, 
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        
+        # Add to request data for parent class processing
+        request.data['refresh'] = refresh_token
+        response = super().post(request, *args, **kwargs)
+        
+        if response.status_code == 200:
+            access_token = response.data['access']
+            response.data = {'message': 'Token refreshed'}
+            
+            # Set new access token cookie
+            response.set_cookie(
+                settings.JWT_COOKIE_NAME,
+                access_token,
+                max_age=settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME'].total_seconds(),
+                httponly=settings.JWT_COOKIE_HTTP_ONLY,
+                secure=settings.JWT_COOKIE_SECURE,
+                samesite=settings.JWT_COOKIE_SAME_SITE,
+            )
+        
+        return response
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def logout_view(request):
+    """
+    Logout view that clears HTTP-only cookies and blacklists refresh token
+    """
+    refresh_token = request.COOKIES.get(settings.JWT_REFRESH_COOKIE_NAME)
+    
+    # Blacklist the refresh token for security
+    if refresh_token:
+        try:
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+        except Exception:
+            pass  # Token might already be invalid
+    
+    response = Response({'message': 'Logged out successfully'})
+    
+    # Clear both cookies
+    response.delete_cookie(settings.JWT_COOKIE_NAME)
+    response.delete_cookie(settings.JWT_REFRESH_COOKIE_NAME)
+    
+    return response

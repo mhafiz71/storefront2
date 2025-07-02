@@ -12,10 +12,11 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 
 from pathlib import Path
 from datetime import timedelta
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
+IS_LOCAL = os.environ.get("DJANGO_ENV") == "local"
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
@@ -51,6 +52,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -155,10 +157,28 @@ DJOSER = {
 REST_FRAMEWORK = {
     'COERCE_DECIMAL_TO_STRING': False,
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'store.authentication.JWTCookieAuthentication',
     ),
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
+
+JWT_COOKIE_NAME = 'access_token'
+JWT_REFRESH_COOKIE_NAME = 'refresh_token'
+# JWT_COOKIE_SECURE = not IS_LOCAL  # Secure only in production
+JWT_COOKIE_HTTP_ONLY = True
+JWT_COOKIE_SAME_SITE = 'Strict'
+
+CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_SAMESITE = "Strict"
+CSRF_COOKIE_SECURE = not IS_LOCAL
+
+# Define IS_LOCAL to determine if running in a local environment
+
+
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+]
 
 SPECTACULAR_SETTINGS = {
     'TITLE': 'Storefront API',
@@ -210,18 +230,14 @@ SPECTACULAR_SETTINGS = {
     },
     'SERVE_PERMISSIONS': ['rest_framework.permissions.IsAuthenticated'],
     'SERVE_AUTHENTICATION': ['rest_framework_simplejwt.authentication.JWTAuthentication'],
-    'DISABLE_ERRORS_AND_WARNINGS': False,
-    'ENUM_NAME_OVERRIDES': {},
-    'SCHEMA_PATH_PREFIX': '/',  # Include all paths
-    'SCHEMA_PATH_PREFIX_TRIM': False,
-    'DEFAULT_GENERATOR_CLASS': 'drf_spectacular.openapi.AutoSchema',
-    'PREPROCESSING_HOOKS': [],
-    'POSTPROCESSING_HOOKS': [],
+
 }
 
 SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('JWT',),
     'ACCESS_TOKEN_LIFETIME': timedelta(days=6),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,    
 }
 
 AUTH_USER_MODEL = 'core.User'
